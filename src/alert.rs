@@ -19,6 +19,8 @@
 //! - [`Alert`]: Struct for configuring and displaying the alert widget.
 //! - [`alert`]: Convenience function for creating an alert widget.
 
+use std::hash::Hash;
+
 use egui::{Button, Color32, CornerRadius, Frame, Label, Margin, RichText, Stroke, Ui, Widget};
 
 /// Represents the severity level of an alert. Determines the background color and semantic meaning
@@ -28,7 +30,7 @@ use egui::{Button, Color32, CornerRadius, Frame, Label, Margin, RichText, Stroke
 /// - `Info`: Indicates informational messages that are not critical (blue).
 /// - `Warning`: Indicates a warning that may require attention but is not critical (yellow).
 /// - `Error`: Indicates an error or critical issue that needs immediate attention (red).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AlertLevel {
     /// Indicates a successful operation or state.
     Success,
@@ -47,8 +49,10 @@ pub enum AlertLevel {
 /// and the corner radius. The alert box always includes a close ("✕") button.
 ///
 /// Use the [`alert`] function for a convenient way to create an alert with a given level and message.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Alert {
+    /// The severity level of the alert.
+    level: AlertLevel,
     /// The background color of the alert box.
     color: Color32,
     /// The message displayed in the alert box.
@@ -61,18 +65,36 @@ pub struct Alert {
     corner_radius: u8,
     /// Whether to show the close ("✕") button.
     can_close: bool,
+    /// Optional width constraint for the alert box.
+    width: Option<f32>,
+}
+
+impl Hash for Alert {
+    /// Hash the alert's properties to ensure consistent behavior in hash maps and sets.
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.level.hash(state);
+        self.color.hash(state);
+        self.message.hash(state);
+        self.inner_margin.hash(state);
+        self.outer_margin.hash(state);
+        self.corner_radius.hash(state);
+        self.can_close.hash(state);
+        self.width.unwrap_or(-1.0).to_bits().hash(state);
+    }
 }
 
 impl Default for Alert {
     /// Creates a default alert with a generic error color and message.
     fn default() -> Self {
         Alert {
+            level: AlertLevel::Info,
             color: Color32::from_rgb(255, 200, 200),
             message: "No message provided".to_string(),
             inner_margin: 10,
-            outer_margin: 10,
+            outer_margin: 1,
             corner_radius: 4,
             can_close: true, // Show close button by default
+            width: None,
         }
     }
 }
@@ -80,8 +102,10 @@ impl Default for Alert {
 impl Alert {
     /// Create a new alert with the given message and default info color.
     pub fn new(message: &str) -> Self {
-        let color = Self::level_to_color(AlertLevel::Info);
+        let level = AlertLevel::Info;
+        let color = Self::level_to_color(level);
         Self {
+            level,
             color,
             message: message.to_string(),
             ..Default::default()
@@ -90,6 +114,7 @@ impl Alert {
 
     /// Set the alert's severity level, which determines its background color.
     pub fn with_level(mut self, level: AlertLevel) -> Self {
+        self.level = level;
         self.color = Self::level_to_color(level);
         self
     }
@@ -118,6 +143,12 @@ impl Alert {
         self
     }
 
+    /// Set the width of the alert box.
+    pub fn width(mut self, width: f32) -> Self {
+        self.width = Some(width);
+        self
+    }
+
     /// Map an [`AlertLevel`] to its corresponding background color.
     fn level_to_color(level: AlertLevel) -> Color32 {
         match level {
@@ -127,6 +158,16 @@ impl Alert {
             AlertLevel::Error => Color32::LIGHT_RED,
         }
     }
+
+    /// Expose alert message for external access.
+    pub fn get_message(&self) -> &str {
+        &self.message
+    }
+
+    /// Get the alert's severity level.
+    pub fn get_level(&self) -> AlertLevel {
+        self.level
+    }
 }
 
 impl Widget for Alert {
@@ -135,35 +176,35 @@ impl Widget for Alert {
     /// The alert is displayed as a colored frame with the message and an optional close button.
     /// The returned [`egui::Response`] covers both the label and the close button (if present).
     fn ui(self, ui: &mut Ui) -> egui::Response {
-        let frame = Frame::default()
+        ui.set_width(self.width.unwrap_or(ui.available_width()));
+        Frame::default()
             .fill(self.color)
             .stroke(Stroke::new(1.0, Color32::from_rgb(200, 200, 200)))
             .corner_radius(CornerRadius::same(self.corner_radius))
             .inner_margin(Margin::same(self.inner_margin))
-            .outer_margin(Margin::same(self.outer_margin));
-
-        frame
+            .outer_margin(Margin::same(self.outer_margin))
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    let label_resp = ui
-                        .add(Label::new(RichText::new(&self.message).color(Color32::BLACK)).wrap());
-                    let response = if self.can_close {
-                        let close_resp = ui
-                            .with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                ui.add(
-                                    Button::new(
-                                        RichText::new("X").color(Color32::DARK_RED).strong(),
-                                    )
+                    if self.can_close {
+                        let _r2 = ui.add_enabled(
+                            false,
+                            Label::new(RichText::new(&self.message).color(Color32::BLACK)).wrap(),
+                        );
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.add(
+                                Button::new(RichText::new("X").color(Color32::DARK_RED).strong())
                                     .frame(false),
-                                )
-                            })
-                            .inner;
-                        label_resp | close_resp
+                            )
+                        })
+                        .inner
                     } else {
+                        let label_resp = ui.add_enabled(
+                            false,
+                            Label::new(RichText::new(&self.message).color(Color32::BLACK)).wrap(),
+                        );
                         ui.add_space(ui.available_width());
                         label_resp
-                    };
-                    response
+                    }
                 })
                 .inner
             })
@@ -178,7 +219,7 @@ impl Widget for Alert {
 /// - `message`: The message to display inside the alert box.
 ///
 /// # Returns
-/// Returns an [`egui::Widget`] closure. When invoked, it returns an [`egui::Response`] for the alert box.
+/// Returns an [`Alert`] widget configured with the specified level and message.
 ///
 /// # Example
 /// ```
@@ -189,6 +230,6 @@ impl Widget for Alert {
 /// });
 /// # });
 /// ```
-pub fn alert(level: AlertLevel, message: &str) -> impl Widget + '_ {
-    move |ui: &mut Ui| ui.add(Alert::new(message).with_level(level))
+pub fn alert(level: AlertLevel, message: &str) -> Alert {
+    Alert::new(message).with_level(level)
 }

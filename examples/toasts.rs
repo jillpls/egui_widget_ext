@@ -9,8 +9,7 @@
 //! cargo run --example toasts
 //! ```
 
-use std::time::Duration;
-
+use chrono::Duration;
 use eframe::egui;
 use egui::{Align2, Color32, Context, Vec2};
 use egui_widget_ext::Toast;
@@ -44,7 +43,7 @@ impl eframe::App for ToastsApp {
                 if ui.button("8 sec Long Toast").clicked() {
                     self.toasts.push(
                         Toast::new("This toast will last for 8 seconds!")
-                            .duration(Duration::from_secs(8)),
+                            .duration(Duration::seconds(8)),
                     );
                 }
             });
@@ -66,7 +65,7 @@ impl eframe::App for ToastsApp {
 
             // Ensure toasts expire even if there's no user input
             if !self.toasts.is_empty() {
-                ctx.request_repaint_after(Duration::from_millis(200));
+                ctx.request_repaint_after(std::time::Duration::from_millis(200));
             }
         });
     }
