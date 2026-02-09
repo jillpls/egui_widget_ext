@@ -6,7 +6,7 @@
 //!
 //! To run this example:
 //! ```sh
-//! cargo run --example toasts
+//! cargo run --example toasts --features "toast"
 //! ```
 
 use chrono::Duration;

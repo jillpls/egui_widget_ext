@@ -10,7 +10,7 @@
 //!
 //! To run this example:
 //! ```sh
-//! cargo run --example alerts
+//! cargo run --example alerts --features "alert"
 //! ```
 //!
 //! This file is intended for demonstration and manual testing purposes only.

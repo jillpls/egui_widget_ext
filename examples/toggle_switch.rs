@@ -9,7 +9,7 @@
 //!
 //! To run this example:
 //! ```sh
-//! cargo run --example toggle_switch
+//! cargo run --example toggle_switch --features "toggle_switch"
 //! ```
 //!
 //! This file is intended for demonstration and manual testing purposes only.

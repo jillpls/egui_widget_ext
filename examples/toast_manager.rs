@@ -7,7 +7,7 @@
 //! ## Example
 //! Run this example with:
 //! ```sh
-//! cargo run --example toast_manager
+//! cargo run --example toast_manager --features "toast toast_manager"
 //! ```
 //!
 //! This will open a window demonstrating the toast manager's capabilities.

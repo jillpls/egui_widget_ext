@@ -9,7 +9,7 @@
 //! ## Example
 //! Run this example with:
 //! ```sh
-//! cargo run --example alert_manager
+//! cargo run --example alert_manager --features "alert alert_manager"
 //! ```
 //!
 //! This will open a window demonstrating the alert manager's capabilities.
