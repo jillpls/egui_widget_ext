@@ -11,7 +11,7 @@ keywords = ["egui", "widget", "gui", "ui", "extension"]
 documentation = "https://docs.rs/egui_widget_ext"
 
 [dependencies]
-egui = "0.32"
+egui = "0.35"
 chrono = { version = "0.4", features = ["wasmbind", "serde"] }
 
 [features]
@@ -22,8 +22,28 @@ toast=[]
 toast_manager=["toast"]
 all = ["alert_manager", "alert", "toggle_switch", "toast_manager", "toast"]
 
+[[example]]
+name = "alerts"
+required-features = ["alert"]
+
+[[example]]
+name = "alert_manager"
+required-features = ["alert_manager"]
+
+[[example]]
+name = "toggle_switch"
+required-features = ["toggle_switch"]
+
+[[example]]
+name = "toasts"
+required-features = ["toast"]
+
+[[example]]
+name = "toast_manager"
+required-features = ["toast_manager"]
+
 [dev-dependencies]
-eframe = "0.32"
+eframe = "0.35"
 
 [package.metadata.docs.rs]
 features = ["all"]
